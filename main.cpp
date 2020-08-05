@@ -91,14 +91,13 @@ int main() {
     Vector2 playerPosition((float)windowSize.x - 20, (float)windowSize.y - 20);
     g_window.setFramerateLimit(kFPS);
     g_window.setKeyRepeatEnabled(false);
-    g_playerShapes[0].setFillColor(Color::Red);
+    g_playerShapes[0].setFillColor(Color(50, 255, 50));
     g_playerShapes[0].setPosition(playerPosition);
 
-    g_apple.setFillColor(Color::Green);
+    g_apple.setFillColor(Color::Red);
     g_apple.setPosition((float)(floor(windowSize.x / 40.0) * 20.0), (float)(floor(windowSize.y / 40.0) * 20.0));
 
-    RectangleShape background(Vector2((float)windowSize.x, (float)windowSize.y));
-    background.setFillColor(Color(30, 40, 50));
+    RectangleShape background(Vector2(20.0f, 20.0f));
     Font font{};
     font.loadFromFile("./PressStart2P-Regular.ttf");
     Text progressText("1/" + std::to_string(amountOfSquares), font);
@@ -118,7 +117,7 @@ int main() {
                     #ifndef NDEBUG
                     case Keyboard::Key::Enter: {
                         RectangleShape newRectangle(Vector2(20.0f, 20.0f));
-                        newRectangle.setFillColor(Color::White);
+                        newRectangle.setFillColor(Color(rand() % 55 + 200, rand() % 55 + 200, rand() % 55 + 200));
                         newRectangle.setPosition(g_playerShapes.size() == 1 ? oldPosition : g_playerShapes.back().getPosition());
                         g_playerShapes.push_back(newRectangle);
                         progressText.setString(std::to_string(g_playerShapes.size()) + "/" + std::to_string(amountOfSquares));
@@ -162,17 +161,14 @@ int main() {
         if(playerPosition == g_apple.getPosition()) {
             g_apple.setPosition(getNewApplePosition());
             RectangleShape newRectangle(Vector2(20.0f, 20.0f));
-            newRectangle.setFillColor(Color::White);
+            newRectangle.setFillColor(Color(rand() % 55 + 200, rand() % 55 + 200, rand() % 55 + 200));
             newRectangle.setPosition(g_playerShapes.size() == 1 ? oldPosition : g_playerShapes.back().getPosition());
             g_playerShapes.push_back(newRectangle);
             progressText.setString(std::to_string(g_playerShapes.size()) + "/" + std::to_string(amountOfSquares));
         } else {
             for(std::vector<int>::size_type i = 1; i != g_playerShapes.size(); i++) {
                 if(g_playerShapes[0].getPosition() == g_playerShapes[i].getPosition()) {
-                    g_playerShapes = { RectangleShape(Vector2(20.0f, 20.0f)) };
-                    g_playerShapes[0].setFillColor(Color::Red);
-                    g_playerShapes[0].setPosition(playerPosition);
-
+                    g_playerShapes = { g_playerShapes[0] };
                     g_apple.setPosition((float)(floor(g_window.getSize().x / 40.0) * 20.0), (float)(floor(g_window.getSize().y / 40.0) * 20.0));
                     progressText.setString("1/" + std::to_string(amountOfSquares));
                     break;
@@ -182,7 +178,16 @@ int main() {
 
         g_playerShapes[0].setPosition(playerPosition);
         g_window.clear();
-        g_window.draw(background);
+
+        for(short x = 0; x <= g_window.getSize().x; x+=20) { // NOLINT(bugprone-too-small-loop-variable)
+            for(short y = 0; y <= g_window.getSize().y; y+=20) { // NOLINT(bugprone-too-small-loop-variable)
+//                int a = rand() % 2 + 10;
+                background.setFillColor((x / 20 + y / 20) % 2 == 1 ? Color(0, 0, 0) : Color(10, 10, 10));
+                background.setPosition(x, y);
+                g_window.draw(background);
+            }
+        }
+
         for(std::vector<int>::size_type i = g_playerShapes.size() - 1; i >= 1; i--) {
             if(i == 1) g_playerShapes[i].setPosition(oldPosition);
             else g_playerShapes[i].setPosition(g_playerShapes[i-1].getPosition());
