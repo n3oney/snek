@@ -4,10 +4,11 @@
 #include <SFML/Graphics.hpp>
 #include <vector>
 #include <cmath>
+#include <future>
 
-#define kFPS 15
-#define kFullscreen false
-#define kSolidWalls false
+#define kFPS 15 // The more fps, the faster the game goes.
+#define kFullscreen false // Self-explanatory
+#define kSolidWalls false // If set to false, you won't die from impact with the window's border, but teleport to the other side
 
 using namespace sf;
 
@@ -33,8 +34,6 @@ CircleShape g_apple(10.0f, 20);
 [[maybe_unused]] bool isOutOfBounds(Vector2<unsigned int> position, Vector2<unsigned int> size) {
     return position.x < 0 || position.x > g_window.getSize().x - size.x || position.y < 0 || position.y > g_window.getSize().y - size.y;
 }
-
-
 
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "Simplify"
@@ -83,20 +82,22 @@ Vector2<float> getNewApplePosition() {
     return Vector2(x, y);
 }
 
+
 int main() {
-    unsigned int amountOfSquares = (g_window.getSize().x / 20) * (g_window.getSize().y / 20);
+    Vector2 windowSize = g_window.getSize();
+    unsigned int amountOfSquares = (windowSize.x / 20) * (windowSize.y / 20);
     Direction lastDirection = Left;
     Direction nextDirection = Left;
-    Vector2 playerPosition((float)g_window.getSize().x - 20, (float)g_window.getSize().y - 20);
+    Vector2 playerPosition((float)windowSize.x - 20, (float)windowSize.y - 20);
     g_window.setFramerateLimit(kFPS);
     g_window.setKeyRepeatEnabled(false);
     g_playerShapes[0].setFillColor(Color::Red);
     g_playerShapes[0].setPosition(playerPosition);
 
     g_apple.setFillColor(Color::Green);
-    g_apple.setPosition((float)(floor(g_window.getSize().x / 40.0) * 20.0), (float)(floor(g_window.getSize().y / 40.0) * 20.0));
+    g_apple.setPosition((float)(floor(windowSize.x / 40.0) * 20.0), (float)(floor(windowSize.y / 40.0) * 20.0));
 
-    RectangleShape background(Vector2((float)g_window.getSize().x, (float)g_window.getSize().y));
+    RectangleShape background(Vector2((float)windowSize.x, (float)windowSize.y));
     background.setFillColor(Color(30, 40, 50));
     Font font{};
     font.loadFromFile("./PressStart2P-Regular.ttf");
