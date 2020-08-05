@@ -1,12 +1,13 @@
 #pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-msc50-cpp"
-#pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-err58-cpp"
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include <cmath>
 
 #define kFPS 15
 #define kFullscreen false
+#define kSolidWalls false
 
 using namespace sf;
 
@@ -21,37 +22,56 @@ RenderWindow g_window(VideoMode(1000, 500), "snek", kFullscreen ? sf::Style::Ful
 std::vector<RectangleShape> g_playerShapes = { RectangleShape(Vector2(20.0f, 20.0f)) };
 CircleShape g_apple(10.0f, 20);
 
-[[maybe_unused]] bool isOutOfBounds(Vector2<float> position, Vector2<float> size, RenderWindow *window) {
-    return position.x < 0 || position.x > window->getSize().x - size.x || position.y < 0 || position.y > window->getSize().y - size.y;
+[[maybe_unused]] bool isOutOfBounds(Vector2<float> position, Vector2<float> size) {
+    return position.x < 0 || position.x >g_window.getSize().x - size.x || position.y < 0 || position.y > g_window.getSize().y - size.y;
 }
 
-[[maybe_unused]] bool isOutOfBounds(Vector2<int> position, Vector2<int> size, RenderWindow *window) {
-    return position.x < 0 || position.x > window->getSize().x - size.x || position.y < 0 || position.y > window->getSize().y - size.y;
+[[maybe_unused]] bool isOutOfBounds(Vector2<int> position, Vector2<int> size) {
+    return position.x < 0 || position.x > g_window.getSize().x - size.x || position.y < 0 || position.y > g_window.getSize().y - size.y;
 }
 
-[[maybe_unused]] bool isOutOfBounds(Vector2<unsigned int> position, Vector2<unsigned int> size, RenderWindow *window) {
-    return position.x < 0 || position.x > window->getSize().x - size.x || position.y < 0 || position.y > window->getSize().y - size.y;
+[[maybe_unused]] bool isOutOfBounds(Vector2<unsigned int> position, Vector2<unsigned int> size) {
+    return position.x < 0 || position.x > g_window.getSize().x - size.x || position.y < 0 || position.y > g_window.getSize().y - size.y;
 }
 
 
 
-[[maybe_unused]] Vector2<float> moveBy(Vector2<float> vector2, float x = 0.0f, float y = 0.0f) {
-    Vector2 newVector(vector2.x + x, vector2.y + y);
-    if(isOutOfBounds(newVector, g_playerShapes[0].getSize(), &g_window)) return vector2;
-    else return newVector;
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "Simplify"
+#pragma ide diagnostic ignored "UnreachableCode"
+[[maybe_unused]] Vector2<float> moveBy(Vector2<float> vector2, Direction direction, float amount = 0.0f) {
+    Vector2 newVector = vector2;
+    switch(direction) {
+        case Up:
+            newVector.y -= amount;
+            break;
+        case Down:
+            newVector.y += amount;
+            break;
+        case Left:
+            newVector.x -= amount;
+            break;
+        case Right:
+            newVector.x += amount;
+            break;
+    }
+    if(isOutOfBounds(newVector, g_playerShapes[0].getSize())) {
+        if(kSolidWalls) return vector2;
+        else {
+            Vector2 size = g_window.getSize();
+            if(direction == Right) return Vector2(0.0f, vector2.y);
+            else if(direction == Left) return Vector2(size.x - 20.0f, vector2.y);
+            else if(direction == Down) return Vector2(vector2.x, 0.0f);
+            else if(direction == Up) return Vector2(vector2.x, size.y - 20.0f);
+        }
+    }
+    return newVector;
 }
-
-[[maybe_unused]] Vector2<int> moveBy(Vector2<int> vector2, int x = 0, int y = 0) {
-    return Vector2(vector2.x + x, vector2.y + y);
-}
-
-[[maybe_unused]] Vector2<unsigned int> moveBy(Vector2<unsigned int> vector2, unsigned int x = 0, unsigned int y = 0) {
-    return Vector2(vector2.x + x, vector2.y + y);
-}
+#pragma clang diagnostic pop
 
 Vector2<float> getNewApplePosition() {
-    float x = rand() % 50 * 20; // NOLINT(cppcoreguidelines-narrowing-conversions)
-    float y = rand() % 25 * 20; // NOLINT(cppcoreguidelines-narrowing-conversions)
+    float x = rand() % (g_window.getSize().x / 20) * 20; // NOLINT(cppcoreguidelines-narrowing-conversions)
+    float y = rand() % (g_window.getSize().y / 20) * 20; // NOLINT(cppcoreguidelines-narrowing-conversions)
 
     for(std::vector<int>::size_type i = 0; i != g_playerShapes.size(); i++) {
         Vector2 position = g_playerShapes[i].getPosition();
@@ -67,14 +87,14 @@ int main() {
     unsigned int amountOfSquares = (g_window.getSize().x / 20) * (g_window.getSize().y / 20);
     Direction lastDirection = Left;
     Direction nextDirection = Left;
-    Vector2 playerPosition(980.0f, 480.0f);
+    Vector2 playerPosition((float)g_window.getSize().x - 20, (float)g_window.getSize().y - 20);
     g_window.setFramerateLimit(kFPS);
     g_window.setKeyRepeatEnabled(false);
     g_playerShapes[0].setFillColor(Color::Red);
     g_playerShapes[0].setPosition(playerPosition);
 
     g_apple.setFillColor(Color::Green);
-    g_apple.setPosition(480, 240);
+    g_apple.setPosition((float)(floor(g_window.getSize().x / 40.0) * 20.0), (float)(floor(g_window.getSize().y / 40.0) * 20.0));
 
     RectangleShape background(Vector2((float)g_window.getSize().x, (float)g_window.getSize().y));
     background.setFillColor(Color(30, 40, 50));
@@ -135,20 +155,7 @@ int main() {
                 g_window.close();
         }
 
-        switch(nextDirection) {
-            case Left:
-                playerPosition = moveBy(playerPosition, -20);
-                break;
-            case Right:
-                playerPosition = moveBy(playerPosition, 20);
-                break;
-            case Up:
-                playerPosition = moveBy(playerPosition, 0, -20);
-                break;
-            case Down:
-                playerPosition = moveBy(playerPosition, 0, 20);
-                break;
-        }
+        playerPosition = moveBy(playerPosition, nextDirection, 20);
         lastDirection = nextDirection;
 
         if(playerPosition == g_apple.getPosition()) {
@@ -165,7 +172,7 @@ int main() {
                     g_playerShapes[0].setFillColor(Color::Red);
                     g_playerShapes[0].setPosition(playerPosition);
 
-                    g_apple.setPosition(480, 240);
+                    g_apple.setPosition((float)(floor(g_window.getSize().x / 40.0) * 20.0), (float)(floor(g_window.getSize().y / 40.0) * 20.0));
                     progressText.setString("1/" + std::to_string(amountOfSquares));
                     break;
                 }
