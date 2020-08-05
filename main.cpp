@@ -1,9 +1,11 @@
 #pragma clang diagnostic push
+#pragma ide diagnostic ignored "cert-msc50-cpp"
+#pragma clang diagnostic push
 #pragma ide diagnostic ignored "cert-err58-cpp"
 #include <SFML/Graphics.hpp>
 #include <vector>
 
-#define kFPS 30
+#define kFPS 15
 #define kFullscreen false
 
 using namespace sf;
@@ -48,8 +50,8 @@ CircleShape g_apple(10.0f, 20);
 }
 
 Vector2<float> getNewApplePosition() {
-    float x = rand() % 50 * 20;
-    float y = rand() % 25 * 20;
+    float x = rand() % 50 * 20; // NOLINT(cppcoreguidelines-narrowing-conversions)
+    float y = rand() % 25 * 20; // NOLINT(cppcoreguidelines-narrowing-conversions)
 
     for(std::vector<int>::size_type i = 0; i != g_playerShapes.size(); i++) {
         Vector2 position = g_playerShapes[i].getPosition();
@@ -85,12 +87,23 @@ int main() {
 
     while (g_window.isOpen())
     {
+        Vector2 oldPosition = playerPosition;
         Event event{};
 
         while (g_window.pollEvent(event))
         {
             if(event.type == Event::KeyPressed)
                 switch (event.key.code) {
+                    #ifndef NDEBUG
+                    case Keyboard::Key::Enter: {
+                        RectangleShape newRectangle(Vector2(20.0f, 20.0f));
+                        newRectangle.setFillColor(Color::White);
+                        newRectangle.setPosition(g_playerShapes.size() == 1 ? oldPosition : g_playerShapes.back().getPosition());
+                        g_playerShapes.push_back(newRectangle);
+                        progressText.setString(std::to_string(g_playerShapes.size()) + "/" + std::to_string(amountOfSquares));
+                        break;
+                    }
+                    #endif
                     case Keyboard::Key::Escape: {
                         g_window.close();
                         break;
@@ -122,7 +135,6 @@ int main() {
                 g_window.close();
         }
 
-        Vector2 oldPosition = playerPosition;
         switch(nextDirection) {
             case Left:
                 playerPosition = moveBy(playerPosition, -20);
@@ -154,6 +166,7 @@ int main() {
                     g_playerShapes[0].setPosition(playerPosition);
 
                     g_apple.setPosition(480, 240);
+                    progressText.setString("1/" + std::to_string(amountOfSquares));
                     break;
                 }
             }
