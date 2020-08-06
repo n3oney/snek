@@ -84,7 +84,7 @@ Vector2<float> getNewApplePosition() {
 
 
 int main() {
-    unsigned int framerateLimit = 15;
+    unsigned short framerateLimit = 15;
 
     Vector2 windowSize = g_window.getSize();
     unsigned int amountOfSquares = (windowSize.x / 20) * (windowSize.y / 20);
