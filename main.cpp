@@ -6,9 +6,9 @@
 #include <cmath>
 #include <future>
 
-#define kFPS 15 // The more fps, the faster the game goes.
 #define kFullscreen false // Self-explanatory
 #define kSolidWalls false // If set to false, you won't die from impact with the window's border, but teleport to the other side
+#define kAutoSolve true
 
 using namespace sf;
 
@@ -19,7 +19,7 @@ enum Direction {
     Down = 4
 };
 
-RenderWindow g_window(VideoMode(1000, 500), "snek", kFullscreen ? sf::Style::Fullscreen : sf::Style::Close, ContextSettings(0, 0, 8));
+RenderWindow g_window(VideoMode(1000, 520), "snek", kFullscreen ? sf::Style::Fullscreen : sf::Style::Close, ContextSettings(0, 0, 8));
 std::vector<RectangleShape> g_playerShapes = { RectangleShape(Vector2(20.0f, 20.0f)) };
 CircleShape g_apple(10.0f, 20);
 
@@ -84,12 +84,18 @@ Vector2<float> getNewApplePosition() {
 
 
 int main() {
+    unsigned int framerateLimit = 15;
+
     Vector2 windowSize = g_window.getSize();
     unsigned int amountOfSquares = (windowSize.x / 20) * (windowSize.y / 20);
+#if kAutoSolve == false
     Direction lastDirection = Left;
     Direction nextDirection = Left;
+#else
+    Direction nextDirection;
+#endif
     Vector2 playerPosition((float)windowSize.x - 20, (float)windowSize.y - 20);
-    g_window.setFramerateLimit(kFPS);
+    g_window.setFramerateLimit(framerateLimit);
     g_window.setKeyRepeatEnabled(false);
     g_playerShapes[0].setFillColor(Color(50, 255, 50));
     g_playerShapes[0].setPosition(playerPosition);
@@ -128,6 +134,19 @@ int main() {
                         g_window.close();
                         break;
                     }
+                    case Keyboard::Key::Dash:
+                    case Keyboard::Key::Subtract: {
+                        framerateLimit -= 10;
+                        g_window.setFramerateLimit(framerateLimit);
+                        break;
+                    }
+                    case Keyboard::Key::Equal:
+                    case Keyboard::Key::Add: {
+                        framerateLimit += 10;
+                        g_window.setFramerateLimit(framerateLimit);
+                        break;
+                    }
+#if kAutoSolve == false
                     case Keyboard::Key::Left: {
                         if(lastDirection == Right && g_playerShapes.size() > 1) break;
                         nextDirection = Left;
@@ -148,6 +167,7 @@ int main() {
                         nextDirection = Down;
                         break;
                     }
+#endif
                     default:
                         break;
                 }
@@ -155,8 +175,27 @@ int main() {
                 g_window.close();
         }
 
+#if kAutoSolve == true
+        if(((int)g_playerShapes[0].getPosition().y / 20 % 2) == 1) {
+            if(g_playerShapes[0].getPosition().x == g_window.getSize().x - 20.0f) {
+                nextDirection = Up;
+            } else {
+                nextDirection = Right;
+            }
+        }
+        else {
+            if(g_playerShapes[0].getPosition().x == 0) {
+                nextDirection = Up;
+            } else {
+                nextDirection = Left;
+            }
+        }
+#endif
+
         playerPosition = moveBy(playerPosition, nextDirection, 20);
+#if kAutoSolve == false
         lastDirection = nextDirection;
+#endif
 
         if(playerPosition == g_apple.getPosition()) {
             g_apple.setPosition(getNewApplePosition());
@@ -181,7 +220,6 @@ int main() {
 
         for(short x = 0; x <= g_window.getSize().x; x+=20) { // NOLINT(bugprone-too-small-loop-variable)
             for(short y = 0; y <= g_window.getSize().y; y+=20) { // NOLINT(bugprone-too-small-loop-variable)
-//                int a = rand() % 2 + 10;
                 background.setFillColor((x / 20 + y / 20) % 2 == 1 ? Color(0, 0, 0) : Color(10, 10, 10));
                 background.setPosition(x, y);
                 g_window.draw(background);
